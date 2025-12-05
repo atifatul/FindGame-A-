@@ -3,7 +3,7 @@ import Phaser from "phaser";
 import backgroundImage from "./background.png";
 import spriteSheet from "./spritesheet5.png";
 
-// --- SOUND GENERATOR (Same as before) ---
+// --- SOUND GENERATOR  ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(type) {
   if (audioCtx.state === "suspended") audioCtx.resume();
@@ -69,9 +69,7 @@ let isWaveClearing = false;
 let isGameOver = false;
 let isGameRunning = false;
 let hasShownInstructions = false;
-
-// Naya variable orientation check ke liye
-let rotateContainer; 
+let rotateContainer;
 
 function preload() {
   this.load.image("background", backgroundImage);
@@ -90,9 +88,9 @@ function create() {
   spawnAmbientCreatures(this);
   createUI(this);
 
-  // --- NEW: Rotate Screen Message Setup ---
+  // --- Rotate Screen Message Setup ---
   createRotateOverlay(this);
-  
+
   // Game start logic
   if (!hasShownInstructions) {
     showStartScreen(this);
@@ -102,9 +100,12 @@ function create() {
   }
 
   // Event listener for resizing/orientation change
-  this.scale.on('resize', (gameSize, baseSize, displaySize, previousWidth, previousHeight) => {
+  this.scale.on(
+    "resize",
+    (gameSize, baseSize, displaySize, previousWidth, previousHeight) => {
       checkOrientation(this);
-  });
+    }
+  );
 
   // Initial Check
   checkOrientation(this);
@@ -125,14 +126,13 @@ const config = {
   type: Phaser.AUTO,
   parent: "app",
   scale: {
-    // FIT mode best hai mobile aur desktop dono ke liye
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: 800,
     height: 450,
   },
   dom: {
-    createContainer: true
+    createContainer: true,
   },
   render: { pixelArt: false, antialias: true, roundPixels: true },
   backgroundColor: "#006994",
@@ -145,55 +145,51 @@ const game = new Phaser.Game(config);
 // --- NEW ORIENTATION LOGIC ---
 
 function createRotateOverlay(scene) {
-    rotateContainer = scene.add.container(0, 0);
-    // Initially invisible, checkOrientation will show it if needed
-    rotateContainer.setVisible(false);
-    rotateContainer.setDepth(1000); // Sabse upar dikhe
+  rotateContainer = scene.add.container(0, 0);
+  rotateContainer.setVisible(false);
+  rotateContainer.setDepth(1000);
 
-    let overlay = scene.add.graphics();
-    overlay.fillStyle(0x000000, 1);
-    overlay.fillRect(0, 0, 800, 450);
-    
-    // Make overlay interactive to block clicks on elements behind it
-    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 800, 450), Phaser.Geom.Rectangle.Contains);
+  let overlay = scene.add.graphics();
+  overlay.fillStyle(0x000000, 1);
+  overlay.fillRect(0, 0, 800, 450);
+  overlay.setInteractive(
+    new Phaser.Geom.Rectangle(0, 0, 800, 450),
+    Phaser.Geom.Rectangle.Contains
+  );
 
-    let icon = scene.add.text(400, 180, "📱 ➡️ 🔄", {
-        fontSize: "80px"
-    }).setOrigin(0.5);
+  let icon = scene.add
+    .text(400, 180, "📱 ➡️ 🔄", {
+      fontSize: "80px",
+    })
+    .setOrigin(0.5);
 
-    let text = scene.add.text(400, 280, "Please Rotate Your Device", {
-        fontSize: "32px",
-        fontFamily: "Arial",
-        color: "#ffffff",
-        fontStyle: "bold"
-    }).setOrigin(0.5);
+  let text = scene.add
+    .text(400, 280, "Please Rotate Your Device", {
+      fontSize: "32px",
+      fontFamily: "Arial",
+      color: "#ffffff",
+      fontStyle: "bold",
+    })
+    .setOrigin(0.5);
 
-    rotateContainer.add([overlay, icon, text]);
+  rotateContainer.add([overlay, icon, text]);
 }
 
 function checkOrientation(scene) {
-    // Agar width < height hai, mtlb portrait mode hai
-    if (window.innerWidth < window.innerHeight) {
-        // Game pause karo (optional)
-        if(isGameRunning) {
-             scene.physics.pause();
-             if(timerEvent) timerEvent.paused = true;
-        }
-        // Rotate screen dikhao
-        if(rotateContainer) rotateContainer.setVisible(true);
-    } else {
-        // Game resume karo
-        if(isGameRunning) {
-             scene.physics.resume();
-             if(timerEvent) timerEvent.paused = false;
-        }
-        // Rotate screen hatao
-        if(rotateContainer) rotateContainer.setVisible(false);
+  if (window.innerWidth < window.innerHeight) {
+    if (isGameRunning) {
+      scene.physics.pause();
+      if (timerEvent) timerEvent.paused = true;
     }
+    if (rotateContainer) rotateContainer.setVisible(true);
+  } else {
+    if (isGameRunning) {
+      scene.physics.resume();
+      if (timerEvent) timerEvent.paused = false;
+    }
+    if (rotateContainer) rotateContainer.setVisible(false);
+  }
 }
-
-
-// --- EXISTING GAME LOGIC ---
 
 function spawnWave(scene) {
   if (isGameOver || !isGameRunning) return;
@@ -248,9 +244,8 @@ function createBubble(scene, x, y, text) {
 
   container.on("pointerdown", () => {
     if (isWaveClearing || isGameOver || !isGameRunning) return;
-    // Overlay visible hai toh click ignore karo
-    if(rotateContainer && rotateContainer.visible) return;
-    
+    if (rotateContainer && rotateContainer.visible) return;
+
     if (text === "A") {
       handleCorrect(scene, container);
     } else {
@@ -330,21 +325,16 @@ function showStartScreen(scene) {
   startBtn.on("pointerout", () => startBtn.setScale(1));
 
   startBtn.on("pointerdown", () => {
-    // Agar Rotate screen dikh raha hai toh click ignore karo
-    if(rotateContainer && rotateContainer.visible) return;
+    if (rotateContainer && rotateContainer.visible) return;
 
-    // --- FIX: Remove Device Check ---
-    // Ab yeh har device par Fullscreen try karega (Mobile & Laptop)
     if (!scene.scale.isFullscreen) {
-       scene.scale.startFullscreen();
+      scene.scale.startFullscreen();
     }
-    
+
     uiContainer.destroy();
     startGameLogic(scene);
-    
-    // Check orientation again just in case
     setTimeout(() => {
-        checkOrientation(scene);
+      checkOrientation(scene);
     }, 100);
   });
 
@@ -358,8 +348,12 @@ function startGameLogic(scene) {
   timerEvent = scene.time.addEvent({
     delay: 1000,
     callback: () => {
-      // Sirf tab count karo jab game paused na ho (orientation sahi ho)
-      if (score < targetScore && !isGameOver && isGameRunning && (!rotateContainer || !rotateContainer.visible)) {
+      if (
+        score < targetScore &&
+        !isGameOver &&
+        isGameRunning &&
+        (!rotateContainer || !rotateContainer.visible)
+      ) {
         timeElapsed++;
         timerText.setText("Time: " + formatTime(timeElapsed));
       }
@@ -421,19 +415,20 @@ function createUI(scene) {
     hearts.push(heart);
   }
 
-  // --- NEW: Fullscreen Toggle Button (Mobile Fix) ---
-  // Ek chota sa button bottom-right mein taaki user kabhi bhi manually fullscreen kr sake
-  let fsButton = scene.add.text(760, 410, '⛶', { 
-    fontSize: '30px', 
-    color: '#ffffff',
-    backgroundColor: '#00000055', // Thoda transparent black box
-    padding: { x: 8, y: 4 }
-  })
-  .setOrigin(0.5)
-  .setInteractive({ useHandCursor: true })
-  .setDepth(100); // UI ke upar
+  // ---  Fullscreen Toggle Button (Mobile Fix) ---
 
-  fsButton.on('pointerdown', () => {
+  let fsButton = scene.add
+    .text(760, 410, "⛶", {
+      fontSize: "30px",
+      color: "#ffffff",
+      backgroundColor: "#00000055",
+      padding: { x: 8, y: 4 },
+    })
+    .setOrigin(0.5)
+    .setInteractive({ useHandCursor: true })
+    .setDepth(100);
+
+  fsButton.on("pointerdown", () => {
     if (scene.scale.isFullscreen) {
       scene.scale.stopFullscreen();
     } else {
@@ -620,11 +615,9 @@ function createRestartButton(scene, text, hoverColor) {
     btn.setStyle({ fill: "#ffffff", backgroundColor: "#006994" });
   });
   btn.on("pointerdown", () => {
-    // --- FIX: Restart krne pr bhi Fullscreen check kro ---
     if (!scene.scale.isFullscreen) {
-       scene.scale.startFullscreen();
+      scene.scale.startFullscreen();
     }
-    // ----------------------------------------------------
     restartGame(scene);
   });
   return btn;
@@ -675,7 +668,7 @@ function spawnAmbientCreatures(scene) {
     if (startFromLeft) {
       startX = -150;
       endX = 950;
-      animKey = "swim_right"; 
+      animKey = "swim_right";
     } else {
       startX = 950;
       endX = -150;
@@ -690,7 +683,7 @@ function spawnAmbientCreatures(scene) {
     scene.tweens.add({
       targets: fish,
       x: endX,
-      duration: Phaser.Math.Between(15000, 25000), 
+      duration: Phaser.Math.Between(15000, 25000),
       repeat: -1,
       onRepeat: () => {
         let nextFromLeft = Math.random() > 0.5;
